@@ -110,7 +110,6 @@ function App() {
         return <ReactMarkdown children={params.value} />;
       },
     },
-    /*
     {
       field: "url",
       headerName: "",
@@ -140,7 +139,7 @@ function App() {
           </IconButton>
         );
       },
-    },*/
+    },
   ];
   const addChannel = async (channelUrl) => {
     let newChannel = {
@@ -273,7 +272,7 @@ function App() {
       onPaymentSend,
       onPayment,
       { address: selectedVideo.address, amount: selectedVideo.cost },
-      false
+      productionEnvironment
     );
 
     setUpdateIndicator(true);
