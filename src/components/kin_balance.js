@@ -16,17 +16,23 @@ export const getBalance = async (wallet, production) => {
   return null;
 };
 
-export default function KinBalance({ wallet, updateIndicator }) {
+export default function KinBalance({
+  wallet,
+  updateIndicator,
+  onBalanceUpdate,
+}) {
   const [balance, setBalance] = useState(null);
 
   useEffect(() => {
-    console.log("updating baance");
     async function updateBalance() {
-      let productionEnvironment = false;
+      let productionEnvironment = !(
+        process.env.REACT_APP_API_SERVER === "http://localhost:8000"
+      );
 
       let balance = await getBalance(wallet, productionEnvironment);
 
       setBalance(balance);
+      onBalanceUpdate(balance);
     }
     updateBalance();
   }, [updateIndicator]);

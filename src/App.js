@@ -10,12 +10,18 @@ import { DataGrid } from "@mui/x-data-grid";
 import PauseIcon from "@mui/icons-material/Pause";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import IconButton from "@mui/material/IconButton";
+import Link from "@mui/material/Link";
 import AddChannelForm from "./components/invite_form";
 import DeleteIcon from "@mui/icons-material/Delete";
 import TextField from "@mui/material/TextField";
+import AppLogo from "./assets/videocafe-io.png";
+import PerkLogo from "./assets/perk-icon.png";
+import ReactMarkdown from "react-markdown";
+import SvgIcon from "@mui/material/SvgIcon";
+import { ReactComponent as KinIcon } from "./components/KIN.svg";
 
 function App() {
-  const [walletAccounts, setWalletAccounts] = useState(null);
+  const [wallet, setWallet] = useState(null);
   const [openPaymentError, setOpenPaymentError] = useState(false);
   const [paymentInProgress, setPaymentInProgress] = useState(false);
   const [created, setCreated] = useState();
@@ -23,14 +29,16 @@ function App() {
   const [hasBalance, setHasBalance] = useState(false);
   const [updateIndicator, setUpdateIndicator] = useState(null);
   const [selectedVideo, setSelectedVideo] = useState(null);
+  const [latestTransaction, setLatestTransaction] = useState(null);
   const [videos, setVideos] = useState([]);
   const [playing, setPlaying] = useState(false);
   const [addChannelDialogOpen, setAddChannelDialogOpen] = useState(false);
   const [channelUrl, setChannelUrl] = useState(null);
-
+  const [buffering, setBuffering] = useState(false);
+  const [balance, setBalance] = useState(0);
   useEffect(() => {
     initWallet();
-    getVideos();
+    get_videos();
   }, []);
 
   /*  const columns = [
@@ -74,17 +82,35 @@ function App() {
       },
     },
     {
+      field: "ff",
+      headerName: " ",
+      width: 80,
+      renderCell: (params) => {
+        return <img src={params.row.img} height="40em" />;
+      },
+    },
+    {
       field: "title",
       headerName: "Title",
       width: 200,
     },
     {
       field: "cost",
-      headerName: "Cost",
+      headerName: "KIN / 30 seconds",
+      width: 170,
       renderCell: (params) => {
-        return <>{params.value} KIN / 10 seconds</>;
+        return <>{params.value}</>;
       },
     },
+    {
+      field: "description",
+      headerName: "Description",
+      width: 400,
+      renderCell: (params) => {
+        return <ReactMarkdown children={params.value} />;
+      },
+    },
+    /*
     {
       field: "url",
       headerName: "",
@@ -114,15 +140,15 @@ function App() {
           </IconButton>
         );
       },
-    },
+    },*/
   ];
   const addChannel = async (channelUrl) => {
     let newChannel = {
-      id: videos.length + 1,
+      id: videos.length * 2 + 1,
       url: channelUrl,
       title: "My Video",
-      address: "GmGgxMHrr86YV2MwQqsjD1EAp7TWKD57uy7pHcPrBYVv",
-      cost: 1,
+      address: "J9TKBafDeR7nHgb5ovVYYzy4fzXuQXTh4e1nMJUSoyuE",
+      cost: 10,
     };
 
     let newVideos = [...videos, newChannel];
@@ -131,46 +157,38 @@ function App() {
     setSelectedVideo(newChannel);
     setPlaying(true);
   };
-  const getVideos = async () => {
-    let storedVideos = window.localStorage.getItem("channels");
-    if (!storedVideos) storedVideos = [];
-    else {
-      storedVideos = JSON.parse(storedVideos);
+  async function get_videos() {
+    let response = await userService.appFetch(
+      `${process.env.REACT_APP_API_SERVER}/api/campaigns?category=video`,
+      "get"
+    );
+    if (response.ok) {
+      var rows = [];
+      if (response.data && response.data.campaigns) {
+        var i;
+        for (i = 0; i < response.data.campaigns.length; i++) {
+          let data = response.data;
+          rows.push({
+            id: data.campaigns[i].id.toString(),
+            url: data.campaigns[i].extra.image_url,
+            title: data.campaigns[i].title,
+            description: data.campaigns[i].description,
+            address: data.campaigns[i].extra.instructions,
+            img: data.campaigns[i].extra.icon_url,
+            cost: data.campaigns[i].amount,
+          });
+        }
+      }
+      setVideos(rows);
     }
-    let videos;
-    if (storedVideos.length == 0) {
-      videos = [
-        ...storedVideos,
-        {
-          id: storedVideos.length + 1,
-          url: "http://cdnapi.kaltura.com/p/1878761/sp/187876100/playManifest/entryId/1_usagz19w/flavorIds/1_5spqkazq,1_nslowvhp,1_boih5aji,1_qahc37ag/format/applehttp/protocol/http/a.m3u8",
-          title: "Great video",
-          address: "GmGgxMHrr86YV2MwQqsjD1EAp7TWKD57uy7pHcPrBYVv",
-          cost: 1,
-        },
-        {
-          id: storedVideos.length + 2,
-          url: "https://cbclivedai5-i.akamaihd.net/hls/live/567235/event2/CBOT/master5.m3u8",
-          title: "CBC TV (Ontario)",
-          address: "GmGgxMHrr86YV2MwQqsjD1EAp7TWKD57uy7pHcPrBYVv",
-          cost: 1,
-        },
-        {
-          id: storedVideos.length + 3,
-          url: "http://tscstreaming-lh.akamaihd.net/i/TSCLiveStreaming_1@91031/master.m3u8",
-          title: "Shopping Channel",
-          address: "GmGgxMHrr86YV2MwQqsjD1EAp7TWKD57uy7pHcPrBYVv",
-          cost: 1,
-        },
-      ];
-    } else {
-      videos = storedVideos;
-    }
-
-    setVideos(videos);
-  };
+  }
   const onPayment = async (paymentResult) => {
-    setWalletAccounts(paymentResult.wallet);
+    if (paymentResult.success) {
+      setLatestTransaction(paymentResult.transaction);
+      setWallet(paymentResult.wallet);
+    } else {
+      setLatestTransaction(null);
+    }
     setUpdateIndicator(new Date());
   };
 
@@ -182,7 +200,9 @@ function App() {
         wallet = JSON.parse(walletDetails);
       }
 
-      let productionEnvironment = false;
+      let productionEnvironment = !(
+        process.env.REACT_APP_API_SERVER === "http://localhost:8000"
+      );
       setProductionEnvironment(productionEnvironment);
 
       try {
@@ -192,12 +212,11 @@ function App() {
         );
 
         if (wallet_and_accounts) {
-          setWalletAccounts(wallet_and_accounts);
+          setWallet(wallet_and_accounts.wallet);
           window.localStorage.setItem(
             "wallet",
             JSON.stringify(wallet_and_accounts.wallet)
           );
-          onPayment(wallet_and_accounts);
           setCreated(true);
         }
       } catch (e) {
@@ -209,6 +228,11 @@ function App() {
   };
 
   const onPlay = () => {
+    if (balance == 0) {
+      setSelectedVideo(null);
+      setPlaying(false);
+    }
+
     console.log("playing");
   };
   const onPause = () => {
@@ -218,10 +242,31 @@ function App() {
     console.log("ended");
     setSelectedVideo(null);
   };
+  const onBuffer = () => {
+    setBuffering(true);
+    if (balance == 0) setPlaying(false);
+  };
+
+  const onBufferEnd = () => {
+    setBuffering(false);
+  };
+  const onBalanceUpdate = (balance) => {
+    if (balance == 0) {
+      setSelectedVideo(null);
+      setPlaying(false);
+    }
+    setBalance(balance);
+  };
   const onPaymentSend = () => {};
   const onProgress = async () => {
+    if (balance == 0) {
+      setSelectedVideo(null);
+      setPlaying(false);
+    }
+
+    if (buffering) return;
     await submitPayment(
-      walletAccounts,
+      wallet,
       selectedVideo.address,
       selectedVideo.cost,
       null,
@@ -230,8 +275,7 @@ function App() {
       { address: selectedVideo.address, amount: selectedVideo.cost },
       false
     );
-    console.log(walletAccounts);
-    console.log("paid...");
+
     setUpdateIndicator(true);
   };
   return (
@@ -243,30 +287,67 @@ function App() {
       spacing={2}
       style={{ padding: 5, width: "100%" }}
     >
+      {!selectedVideo && (
+        <>
+          <Grid item xs={12}>
+            <img
+              alt="video cafe dot io"
+              src={AppLogo}
+              style={{
+                width: "10em",
+              }}
+            />
+          </Grid>
+          <Grid item xs={12}>
+            <p>
+              <h2>👛 Top-up your wallet</h2>
+              <h2>🎞️ Watch some vids</h2>
+            </p>
+          </Grid>
+        </>
+      )}
+      {selectedVideo && (
+        <>
+          <Grid item xs={12}>
+            <ReactPlayer
+              url={selectedVideo ? selectedVideo.url : null}
+              controls={true}
+              onPlay={onPlay}
+              progressInterval={1000 * 30}
+              onPause={onPause}
+              onEnded={onEnded}
+              onBuffer={onBuffer}
+              onBufferEnd={onBufferEnd}
+              onProgress={onProgress}
+              playing={playing}
+              width={"100%"}
+              height={"100%"}
+            />
+          </Grid>
+        </>
+      )}
       <Grid item xs={12}>
-        <ReactPlayer
-          url={selectedVideo ? selectedVideo.url : null}
-          controls={true}
-          onPlay={onPlay}
-          progressInterval={1000 * 5}
-          onPause={onPause}
-          onEnded={onEnded}
-          onProgress={onProgress}
-          playing={playing}
-          width={"100%"}
-          height={"100%"}
-        />
-      </Grid>
-      <Grid item xs={12}>
-        {walletAccounts && (
+        {wallet && (
           <KinBalanceWidget
-            wallet={walletAccounts.publicKey}
+            wallet={wallet.publicKey}
             updateIndicator={updateIndicator}
-            clickUrl={`https://solscan.io/account/${walletAccounts.publicKey}`}
-            deleteUrl={`https://solscan.io/account/${walletAccounts.publicKey}`}
+            clickUrl={`https://solscan.io/account/${wallet.publicKey}`}
+            deleteUrl={`https://solscan.io/account/${wallet.publicKey}`}
+            onBalanceUpdate={onBalanceUpdate}
           />
         )}
       </Grid>
+      {latestTransaction && (
+        <Grid item xs={12}>
+          <Link href={`https://solscan.io/account/${latestTransaction}`}>
+            Sent {selectedVideo.cost} KIN to{" "}
+            {`${selectedVideo.address.substring(
+              0,
+              4
+            )}...${selectedVideo.address.slice(-4)}`}
+          </Link>
+        </Grid>
+      )}
       <Grid item xs={12} style={{ textAlign: "center" }}>
         <TextField
           fullWidth
@@ -285,7 +366,8 @@ function App() {
           Play
         </Button>
       </Grid>
-      <Grid item xs={12} style={{ width: "100%" }}>
+
+      <Grid item xs={12} style={{ width: "90%" }}>
         {videos && (
           <DataGrid
             autoHeight={true}
@@ -294,6 +376,11 @@ function App() {
             pageSize={10}
           />
         )}
+      </Grid>
+      <Grid item xs={12}>
+        <h5>
+          Powered by <Link href="https://perk.exchange">Perk.Exchange</Link>
+        </h5>
       </Grid>
     </Grid>
   );

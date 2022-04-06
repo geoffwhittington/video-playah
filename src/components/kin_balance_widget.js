@@ -18,6 +18,7 @@ export default function KinBalanceWidget(props) {
         <KinBalance
           wallet={props.wallet}
           updateIndicator={props.updateIndicator}
+          onBalanceUpdate={props.onBalanceUpdate}
         />
       }
       onDelete={() => {
