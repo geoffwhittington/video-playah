@@ -340,7 +340,7 @@ function App() {
       </Grid>
       {latestTransaction && (
         <Grid item xs={12}>
-          <Link href={`https://kinscan.io/tx/${latestTransaction}`}>
+          <Link href={`https://kinscan.io/transaction/${latestTransaction}`}>
             Sent {selectedVideo.cost} KIN to{" "}
             {`${selectedVideo.address.substring(
               0,
@@ -378,19 +378,12 @@ function App() {
           />
         )}
       </Grid>
-      <Grid item xs={12} style={{ width: "90%" }}>
-        {videos.map((video, index) => (
-          <Video
-            title={video.title}
-            description={video.description}
-            img={video.img}
-            time={"30 secs"}
-          />
-        ))}
-      </Grid>
       <Grid item xs={12}>
         <h5>
-          Powered by <Link href="https://perk.exchange">Perk.Exchange</Link>
+          Powered by{" "}
+          <Link href="https://perkexchange.gitbook.io/docs/media-mining">
+            Perk.Exchange
+          </Link>
         </h5>
       </Grid>
     </Grid>
