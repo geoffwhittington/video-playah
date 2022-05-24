@@ -27,6 +27,7 @@ function App() {
   const [openPaymentError, setOpenPaymentError] = useState(false);
   const [paymentInProgress, setPaymentInProgress] = useState(false);
   const [created, setCreated] = useState();
+  const [walletInitializing, setWalletInitializing] = useState(true);
   const [productionEnvironment, setProductionEnvironment] = useState(false);
   const [hasBalance, setHasBalance] = useState(false);
   const [updateIndicator, setUpdateIndicator] = useState(null);
@@ -220,7 +221,9 @@ function App() {
           );
           setCreated(true);
         }
+        setWalletInitializing(false);
       } catch (e) {
+        setWalletInitializing(false);
         console.log(e);
         console.log("Error initializing wallet. Clear your wallet and reload");
       }
@@ -328,6 +331,7 @@ function App() {
         </>
       )}
       <Grid item xs={12}>
+        {walletInitializing && !wallet && <>Initializing wallet ...</>}
         {wallet && (
           <KinBalanceWidget
             wallet={wallet.publicKey}
