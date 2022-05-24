@@ -14,6 +14,7 @@ import Link from "@mui/material/Link";
 import AddChannelForm from "./components/invite_form";
 import DeleteIcon from "@mui/icons-material/Delete";
 import TextField from "@mui/material/TextField";
+import Alert from "@mui/material/Alert";
 import AppLogo from "./assets/videocafe-io.png";
 import PerkLogo from "./assets/perk-icon.png";
 import ReactMarkdown from "react-markdown";
@@ -196,6 +197,7 @@ function App() {
 
   const initWallet = () => {
     const localSetupWallet = async () => {
+      setWalletInitializing(true);
       let wallet = null;
       let walletDetails = window.localStorage.getItem("wallet");
       if (walletDetails) {
@@ -330,8 +332,25 @@ function App() {
           </Grid>
         </>
       )}
-      <Grid item xs={12}>
-        {walletInitializing && !wallet && <>Initializing wallet ...</>}
+      <Grid item xs={12} style={{ textAlign: "center" }}>
+        {walletInitializing && !wallet && (
+          <Alert severity="warning">
+            Initializing wallet ... Please be patient.
+          </Alert>
+        )}
+        {!walletInitializing && !wallet && (
+          <>
+            <Alert severity="warning">Solana is slow right now.</Alert>
+            <Button
+              variant="contained"
+              onClick={() => {
+                initWallet();
+              }}
+            >
+              Create wallet
+            </Button>
+          </>
+        )}
         {wallet && (
           <KinBalanceWidget
             wallet={wallet.publicKey}
