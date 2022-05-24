@@ -19,6 +19,8 @@ import PerkLogo from "./assets/perk-icon.png";
 import ReactMarkdown from "react-markdown";
 import SvgIcon from "@mui/material/SvgIcon";
 import { ReactComponent as KinIcon } from "./components/KIN.svg";
+import Video from "./components/Video";
+import { VolumeDown } from "@mui/icons-material";
 
 function App() {
   const [wallet, setWallet] = useState(null);
@@ -145,8 +147,8 @@ function App() {
     let newChannel = {
       id: videos.length * 2 + 1,
       url: channelUrl,
-      title: "My Video",
-      address: "J9TKBafDeR7nHgb5ovVYYzy4fzXuQXTh4e1nMJUSoyuE",
+      title: `Video ${videos.length + 1}`,
+      address: "2oH1oGkdZe9D8a8XFwhgBvwZQXyeMx4rsMpqjygHPFaz",
       cost: 10,
     };
 
@@ -158,7 +160,7 @@ function App() {
   };
   async function get_videos() {
     let response = await userService.appFetch(
-      `${process.env.REACT_APP_API_SERVER}/api/campaigns?category=video`,
+      `${process.env.REACT_APP_API_SERVER}/api/campaigns?category=videocafe`,
       "get"
     );
     if (response.ok) {
@@ -330,15 +332,15 @@ function App() {
           <KinBalanceWidget
             wallet={wallet.publicKey}
             updateIndicator={updateIndicator}
-            clickUrl={`https://solscan.io/account/${wallet.publicKey}`}
-            deleteUrl={`https://solscan.io/account/${wallet.publicKey}`}
+            clickUrl={`https://kinscan.io/address/${wallet.publicKey}`}
+            deleteUrl={`https://kinscan.io/address/${wallet.publicKey}`}
             onBalanceUpdate={onBalanceUpdate}
           />
         )}
       </Grid>
       {latestTransaction && (
         <Grid item xs={12}>
-          <Link href={`https://solscan.io/account/${latestTransaction}`}>
+          <Link href={`https://kinscan.io/tx/${latestTransaction}`}>
             Sent {selectedVideo.cost} KIN to{" "}
             {`${selectedVideo.address.substring(
               0,
@@ -375,6 +377,16 @@ function App() {
             pageSize={10}
           />
         )}
+      </Grid>
+      <Grid item xs={12} style={{ width: "90%" }}>
+        {videos.map((video, index) => (
+          <Video
+            title={video.title}
+            description={video.description}
+            img={video.img}
+            time={"30 secs"}
+          />
+        ))}
       </Grid>
       <Grid item xs={12}>
         <h5>
